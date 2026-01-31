@@ -65,6 +65,17 @@
       padding: 20px;
       margin-bottom: 15px;
       border: 1px solid #333;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .post:hover {
+      border-color: #ffd700;
+    }
+    .post-author {
+      cursor: pointer;
+    }
+    .post-author:hover {
+      text-decoration: underline;
     }
     .post-header {
       display: flex;
@@ -316,10 +327,10 @@ node lib/cli.js post "Hello Star Pulse!"</code></pre>
           }
           
           return `
-            <div class="post">
+            <div class="post" onclick="window.location='/post/${event.id}'">
               <div class="post-header">
                 <div>
-                  <span class="post-author">${escapeHtml(name)}</span>${kindLabel}
+                  <span class="post-author" onclick="event.stopPropagation(); window.location='/u/${event.pubkey}'">${escapeHtml(name)}</span>${kindLabel}
                   <div class="post-pubkey">${event.pubkey.slice(0, 24)}...</div>
                 </div>
                 <span class="post-time">${time}</span>

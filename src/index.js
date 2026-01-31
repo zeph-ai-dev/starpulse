@@ -97,13 +97,30 @@ app.get('/events', (req, res) => {
   }
 });
 
-// GET /events/:id - Get single event
+// GET /events/:id - Get single event with replies
 app.get('/events/:id', (req, res) => {
   try {
     const event = getEventById(db, req.params.id);
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });
     }
+    
+    // Get replies if requested
+    const { replies } = req.query;
+    let replyEvents = [];
+    if (replies === 'true') {
+      const allReplies = getEvents(db, { kind: 2, limit: 100 });
+      replyEvents = allReplies.filter(e => 
+        e.tags?.some(t => t[0] === 'reply_to' && t[1] === req.params.id)
+      );
+      
+      // Get profiles for all involved
+      const pubkeys = [event.pubkey, ...replyEvents.map(e => e.pubkey)];
+      const profiles = getProfilesForPubkeys(db, [...new Set(pubkeys)]);
+      
+      return res.json({ success: true, event, replies: replyEvents, profiles });
+    }
+    
     res.json({ success: true, event });
   } catch (err) {
     console.error('Error getting event:', err);
@@ -160,6 +177,16 @@ app.get('/api', (req, res) => {
 // Serve homepage (static file handles this, but fallback for SPA-style)
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'index.html'));
+});
+
+// Profile page
+app.get('/u/:pubkey', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'profile.html'));
+});
+
+// Thread/post page
+app.get('/post/:id', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'thread.html'));
 });
 
 // Create HTTP server
