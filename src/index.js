@@ -114,15 +114,16 @@ app.get('/events/:id', (req, res) => {
         e.tags?.some(t => t[0] === 'reply_to' && t[1] === req.params.id)
       );
       
-      // Get upvote count
-      const upvoteCounts = getUpvoteCounts(db, [req.params.id]);
+      // Get upvote counts for main post and all replies
+      const allEventIds = [req.params.id, ...replyEvents.map(e => e.id)];
+      const upvoteCounts = getUpvoteCounts(db, allEventIds);
       const upvotes = upvoteCounts[req.params.id] || 0;
       
       // Get profiles for all involved
       const pubkeys = [event.pubkey, ...replyEvents.map(e => e.pubkey)];
       const profiles = getProfilesForPubkeys(db, [...new Set(pubkeys)]);
       
-      return res.json({ success: true, event, replies: replyEvents, profiles, upvotes });
+      return res.json({ success: true, event, replies: replyEvents, profiles, upvotes, upvoteCounts });
     }
     
     res.json({ success: true, event });

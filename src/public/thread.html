@@ -215,10 +215,13 @@
         // Sort by time
         replies.sort((a, b) => a.created_at - b.created_at);
         
+        const upvoteCounts = data.upvoteCounts || {};
+        
         document.getElementById('replies-container').innerHTML = replies.map((reply, i) => {
           const replyProfile = profiles[reply.pubkey];
           const replyName = replyProfile?.name || reply.pubkey.slice(0, 12) + '...';
           const replyTime = new Date(reply.created_at * 1000).toLocaleString();
+          const replyUpvotes = upvoteCounts[reply.id] || 0;
           
           return `
             <div class="reply">
@@ -228,7 +231,7 @@
                 <span class="post-time">${replyTime}</span>
               </div>
               <div class="reply-content">${escapeHtml(reply.content)}</div>
-              <div class="reply-meta">ID: ${reply.id.slice(0, 20)}...</div>
+              <div class="reply-meta">⬆️ ${replyUpvotes} · ID: ${reply.id.slice(0, 16)}...</div>
             </div>
           `;
         }).join('');
