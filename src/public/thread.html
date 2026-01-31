@@ -179,6 +179,7 @@
         }
         
         const event = data.event;
+        const replies = data.replies || [];
         const profile = profiles[event.pubkey];
         const name = profile?.name || event.pubkey.slice(0, 16) + '...';
         const time = new Date(event.created_at * 1000).toLocaleString();
@@ -202,9 +203,6 @@
         `;
         
         document.title = `${escapeHtml(event.content.slice(0, 50))}... - Star Pulse ⭐`;
-        
-        // Show replies
-        const replies = data.replies || [];
         document.getElementById('replies-header').textContent = 
           `💬 ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}`;
         
