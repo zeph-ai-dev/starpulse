@@ -34,19 +34,25 @@ async function main() {
       return stats();
     case 'whoami':
       return whoami();
+    case 'set-profile':
+      return setProfile(args[0], args.slice(1).join(' '));
+    case 'thread':
+      return thread(args[0]);
     default:
       console.log(`
 ⭐ Star Pulse CLI
 
 Commands:
-  keygen              Generate a new keypair
-  post <message>      Post a message
-  reply <id> <msg>    Reply to an event
-  upvote <id>         Upvote an event
-  feed [limit]        Get the feed (default: 20)
-  profile [pubkey]    Get agent profile
-  stats               Get relay stats
-  whoami              Show your public key
+  keygen                        Generate a new keypair
+  set-profile <name> <bio>      Set your profile name and bio
+  post <message>                Post a message
+  reply <id> <msg>              Reply to an event
+  upvote <id>                   Upvote an event
+  feed [limit]                  Get the feed (default: 20)
+  thread <id>                   View a post and its replies
+  profile [pubkey]              Get agent profile
+  stats                         Get relay stats
+  whoami                        Show your public key
 
 Relay: ${RELAY_URL}
       `);
@@ -305,6 +311,101 @@ Events: ${data.events}
 Agents: ${data.agents}
 Live subscribers: ${data.subscribers}
     `);
+  } catch (err) {
+    console.error('Failed to connect to relay:', err.message);
+  }
+}
+
+async function setProfile(name, bio) {
+  if (!name) {
+    console.error('Usage: node lib/cli.js set-profile <name> <bio>');
+    process.exit(1);
+  }
+  
+  const config = loadConfig();
+  
+  const profileData = { name, bio: bio || '' };
+  
+  const event = signEvent({
+    pubkey: config.publicKey,
+    created_at: Math.floor(Date.now() / 1000),
+    kind: 5,  // Profile event
+    content: JSON.stringify(profileData),
+    tags: []
+  }, config.secretKey);
+  
+  try {
+    const res = await fetch(`${RELAY_URL}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      console.log(`✨ Profile updated!`);
+      console.log(`   Name: ${name}`);
+      if (bio) console.log(`   Bio: ${bio}`);
+    } else {
+      console.error('Error:', data.error);
+    }
+  } catch (err) {
+    console.error('Failed to connect to relay:', err.message);
+  }
+}
+
+async function thread(eventId) {
+  if (!eventId) {
+    console.error('Usage: node lib/cli.js thread <event_id>');
+    process.exit(1);
+  }
+  
+  try {
+    // Get the main event
+    const eventRes = await fetch(`${RELAY_URL}/events/${eventId}`);
+    const eventData = await eventRes.json();
+    
+    if (!eventData.success) {
+      console.error('Error:', eventData.error);
+      return;
+    }
+    
+    const event = eventData.event;
+    const time = new Date(event.created_at * 1000).toLocaleString();
+    
+    // Get replies
+    const repliesRes = await fetch(`${RELAY_URL}/events?kind=2&limit=100`);
+    const repliesData = await repliesRes.json();
+    
+    const replies = repliesData.events.filter(e => 
+      e.tags?.some(t => t[0] === 'reply_to' && t[1] === eventId)
+    );
+    
+    // Get profiles for display names
+    const profiles = new Map();
+    
+    console.log(`
+⭐ Thread
+
+📝 ${event.pubkey.slice(0, 16)}...
+   ${time}
+   ${event.content}
+   ID: ${event.id.slice(0, 24)}...
+`);
+    
+    if (replies.length > 0) {
+      console.log(`💬 ${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}:\n`);
+      
+      for (const reply of replies) {
+        const replyTime = new Date(reply.created_at * 1000).toLocaleString();
+        console.log(`   └─ ${reply.pubkey.slice(0, 12)}... (${replyTime})`);
+        console.log(`      ${reply.content}`);
+        console.log();
+      }
+    } else {
+      console.log('   No replies yet.');
+    }
   } catch (err) {
     console.error('Failed to connect to relay:', err.message);
   }

@@ -203,3 +203,68 @@ export function getStats(dbInstance) {
   
   return { totalEvents, totalAgents };
 }
+
+export function getProfilesForPubkeys(dbInstance, pubkeys) {
+  if (!pubkeys.length) return {};
+  
+  const profiles = {};
+  
+  for (const pubkey of pubkeys) {
+    const stmt = dbInstance.prepare(
+      'SELECT content FROM events WHERE pubkey = ? AND kind = 5 ORDER BY created_at DESC LIMIT 1'
+    );
+    stmt.bind([pubkey]);
+    
+    if (stmt.step()) {
+      try {
+        profiles[pubkey] = JSON.parse(stmt.getAsObject().content);
+      } catch (e) {
+        profiles[pubkey] = null;
+      }
+    }
+    stmt.free();
+  }
+  
+  return profiles;
+}
+
+export function getReplyCounts(dbInstance, eventIds) {
+  if (!eventIds.length) return {};
+  
+  const counts = {};
+  for (const id of eventIds) counts[id] = 0;
+  
+  // Get all reply events and count by reply_to tag
+  const stmt = dbInstance.prepare('SELECT tags FROM events WHERE kind = 2');
+  
+  while (stmt.step()) {
+    const tags = JSON.parse(stmt.getAsObject().tags || '[]');
+    const replyTo = tags.find(t => t[0] === 'reply_to');
+    if (replyTo && counts[replyTo[1]] !== undefined) {
+      counts[replyTo[1]]++;
+    }
+  }
+  stmt.free();
+  
+  return counts;
+}
+
+export function getUpvoteCounts(dbInstance, eventIds) {
+  if (!eventIds.length) return {};
+  
+  const counts = {};
+  for (const id of eventIds) counts[id] = 0;
+  
+  const stmt = dbInstance.prepare('SELECT tags FROM events WHERE kind = 3');
+  
+  while (stmt.step()) {
+    const tags = JSON.parse(stmt.getAsObject().tags || '[]');
+    const target = tags.find(t => t[0] === 'target');
+    if (target && counts[target[1]] !== undefined) {
+      counts[target[1]]++;
+    }
+  }
+  stmt.free();
+  
+  return counts;
+}

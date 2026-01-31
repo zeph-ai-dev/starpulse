@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
-import { initDb, insertEvent, getEvents, getEventById, getAgentProfile, getStats } from './db.js';
+import { initDb, insertEvent, getEvents, getEventById, getAgentProfile, getStats, getProfilesForPubkeys, getReplyCounts, getUpvoteCounts } from './db.js';
 import { verifyEvent, hashEvent } from './crypto.js';
 
 const app = express();
@@ -57,7 +57,7 @@ app.post('/events', (req, res) => {
 // GET /events - Get feed
 app.get('/events', (req, res) => {
   try {
-    const { author, since, until, kind, limit = 50 } = req.query;
+    const { author, since, until, kind, limit = 50, enrich } = req.query;
     const events = getEvents(db, { 
       author, 
       since: since ? parseInt(since) : undefined,
@@ -65,7 +65,26 @@ app.get('/events', (req, res) => {
       kind: kind ? parseInt(kind) : undefined,
       limit: Math.min(parseInt(limit), 200)
     });
-    res.json({ success: true, events });
+    
+    // Optionally enrich with profiles and counts
+    if (enrich === 'true') {
+      const pubkeys = [...new Set(events.map(e => e.pubkey))];
+      const eventIds = events.filter(e => e.kind === 1).map(e => e.id);
+      
+      const profiles = getProfilesForPubkeys(db, pubkeys);
+      const replyCounts = getReplyCounts(db, eventIds);
+      const upvoteCounts = getUpvoteCounts(db, eventIds);
+      
+      res.json({ 
+        success: true, 
+        events,
+        profiles,
+        replyCounts,
+        upvoteCounts
+      });
+    } else {
+      res.json({ success: true, events });
+    }
   } catch (err) {
     console.error('Error getting events:', err);
     res.status(500).json({ error: 'Internal server error' });
