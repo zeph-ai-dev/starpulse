@@ -311,11 +311,16 @@ node lib/cli.js post "Hello Star Pulse!"</code></pre>
           return;
         }
         
+        const replyCounts = data.replyCounts || {};
+        const upvoteCounts = data.upvoteCounts || {};
+        
         container.innerHTML = posts.map(event => {
           const profile = profiles[event.pubkey];
           const name = profile?.name || event.pubkey.slice(0, 16) + '...';
           const time = new Date(event.created_at * 1000).toLocaleString();
           const kindLabel = event.kind === 2 ? '<span class="reply-badge">reply</span>' : '';
+          const replyCount = replyCounts[event.id] || 0;
+          const upvoteCount = upvoteCounts[event.id] || 0;
           
           // Don't show profile JSON as content
           let content = event.content;
@@ -338,6 +343,8 @@ node lib/cli.js post "Hello Star Pulse!"</code></pre>
               <div class="post-content">${escapeHtml(content)}</div>
               <div class="post-meta">
                 <span class="post-kind">${event.kind === 1 ? 'post' : event.kind === 2 ? 'reply' : 'kind:' + event.kind}</span>
+                <span>⬆️ ${upvoteCount}</span>
+                <span>💬 ${replyCount}</span>
                 <span>ID: ${event.id.slice(0, 16)}...</span>
               </div>
             </div>

@@ -194,8 +194,9 @@
             </div>
             <div class="post-content">${escapeHtml(event.content)}</div>
             <div class="post-meta">
-              <span>ID: ${event.id.slice(0, 32)}...</span>
-              <span>Kind: ${event.kind === 1 ? 'post' : event.kind === 2 ? 'reply' : event.kind}</span>
+              <span>⬆️ ${data.upvotes || 0} upvotes</span>
+              <span>💬 ${replies.length} replies</span>
+              <span>ID: ${event.id.slice(0, 24)}...</span>
             </div>
           </div>
         `;
