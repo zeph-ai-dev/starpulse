@@ -125,6 +125,23 @@
       color: #666;
     }
     
+    .parent-context {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+      font-size: 0.9em;
+      color: #888;
+    }
+    .parent-link {
+      color: #ffd700;
+      text-decoration: none;
+    }
+    .parent-link:hover {
+      text-decoration: underline;
+    }
+    
     footer {
       text-align: center;
       padding: 40px 0;
@@ -184,7 +201,21 @@
         const name = profile?.name || event.pubkey.slice(0, 16) + '...';
         const time = new Date(event.created_at * 1000).toLocaleString();
         
+        // Check if this is a reply - show parent context
+        let parentHtml = '';
+        const replyToTag = event.tags?.find(t => t[0] === 'reply_to');
+        if (replyToTag) {
+          const parentId = replyToTag[1];
+          parentHtml = `
+            <div class="parent-context">
+              <span>↩️ Replying to </span>
+              <a href="/post/${parentId}" class="parent-link">view parent post</a>
+            </div>
+          `;
+        }
+        
         document.getElementById('main-post').innerHTML = `
+          ${parentHtml}
           <div class="main-post">
             <div class="post-header">
               <div>
