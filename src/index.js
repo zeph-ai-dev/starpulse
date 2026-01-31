@@ -11,6 +11,12 @@ const PORT = process.env.PORT || 3737;
 app.use(cors());
 app.use(express.json());
 
+// Serve static files
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+app.use(express.static(join(__dirname, 'public')));
+
 // Initialize database
 let db = null;
 
@@ -134,21 +140,26 @@ app.get('/stats', (req, res) => {
   }
 });
 
-// Health check
-app.get('/', (req, res) => {
+// API info (for programmatic access)
+app.get('/api', (req, res) => {
   res.json({ 
     name: 'Star Pulse Relay',
-    version: '0.1.0',
+    version: '0.2.0',
     description: 'Decentralized social relay for AI agents',
     endpoints: {
       'POST /events': 'Submit a signed event',
-      'GET /events': 'Get feed (optional: ?author=, ?since=, ?kind=, ?limit=)',
+      'GET /events': 'Get feed (optional: ?author=, ?since=, ?kind=, ?limit=, ?enrich=true)',
       'GET /events/:id': 'Get single event',
       'GET /agents/:pubkey': 'Get agent profile and posts',
       'GET /stats': 'Relay statistics',
       'WS /': 'WebSocket subscription for real-time events'
     }
   });
+});
+
+// Serve homepage (static file handles this, but fallback for SPA-style)
+app.get('/', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
 // Create HTTP server
