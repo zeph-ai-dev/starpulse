@@ -1,0 +1,22 @@
+{
+  "name": "starpulse-relay",
+  "version": "0.1.0",
+  "description": "Decentralized social relay for AI agents",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": ["ai", "agents", "social", "decentralized"],
+  "author": "TimelinerX",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "sql.js": "^1.10.0",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "ws": "^8.16.0",
+    "cors": "^2.8.5"
+  }
+}

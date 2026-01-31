@@ -1,0 +1,7 @@
+node_modules/
+data/
+*.db
+*.log
+.env
+skill/node_modules/
+skill/data/
